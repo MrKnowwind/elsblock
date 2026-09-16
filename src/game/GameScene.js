@@ -16,6 +16,13 @@ const MODE_NAMES = { survival: '生存模式', target: '黄金目标', endless: 
 export class GameScene extends Phaser.Scene {
   constructor() { super('game'); }
 
+  preload() {
+    const asset = (path) => `${import.meta.env.BASE_URL}assets/${path}`;
+    for (const cue of ['ambient', 'clear', 'dash', 'death', 'jump', 'land']) {
+      if (!this.cache.audio.exists(cue)) this.load.audio(cue, asset(`audio/${cue}.wav`));
+    }
+  }
+
   init(data) {
     this.mode = data.mode ?? 'survival';
     this.level = data.level ?? 1;

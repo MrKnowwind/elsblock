@@ -5,9 +5,80 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
     <meta name="theme-color" content="#020c19" />
     <title>轨道锁落</title>
+    <style>
+      #loading-screen {
+        position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center;
+        color: #dffaff; background: radial-gradient(circle at 50% 34%, #07304a 0, #020812 58%);
+        font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+        transition: opacity 180ms ease;
+      }
+      #loading-screen.is-ready { opacity: 0; pointer-events: none; }
+      .loading-card { width: min(76vw, 360px); text-align: center; }
+      .loading-orbit {
+        width: 72px; height: 72px; margin: 0 auto 24px; border: 4px solid #123f59;
+        border-top-color: #36efff; border-right-color: #ff704e; border-radius: 50%;
+        box-shadow: 0 0 24px #14dff977; animation: loading-spin 1s linear infinite;
+      }
+      .loading-title { margin: 0 0 28px; color: #fff; font-size: 28px; letter-spacing: 5px; }
+      .loading-track { height: 10px; overflow: hidden; border: 1px solid #26dff0; background: #031522; border-radius: 999px; }
+      #loading-fill { width: 0; height: 100%; background: linear-gradient(90deg, #18bddd, #62f7ff); transition: width 120ms linear; }
+      #loading-status { min-height: 24px; margin: 16px 0; color: #9ed8e8; font-size: 14px; }
+      #loading-retry { padding: 9px 22px; border: 1px solid #39eaff; border-radius: 6px; color: #e8fdff; background: #0a3856; cursor: pointer; }
+      @keyframes loading-spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
+    <div id="loading-screen">
+      <div class="loading-card">
+        <div class="loading-orbit" aria-hidden="true"></div>
+        <h1 class="loading-title">轨道锁落</h1>
+        <div id="loading-progress" class="loading-track" role="progressbar" aria-label="游戏加载进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="loading-fill"></div>
+        </div>
+        <p id="loading-status">正在连接游戏资源…</p>
+        <button id="loading-retry" type="button" hidden>重新加载</button>
+      </div>
+    </div>
     <main id="game"></main>
+    <script>
+      (() => {
+        const screen = document.getElementById('loading-screen');
+        const progress = document.getElementById('loading-progress');
+        const fill = document.getElementById('loading-fill');
+        const status = document.getElementById('loading-status');
+        const retry = document.getElementById('loading-retry');
+        let failed = false;
+        const slowTimer = window.setTimeout(() => {
+          status.textContent = '网络连接较慢，请继续等待或重新加载';
+          retry.hidden = false;
+        }, 15000);
+
+        retry.addEventListener('click', () => location.reload());
+        window.gameLoading = {
+          progress(value) {
+            if (failed) return;
+            const percent = Math.round(Math.max(0, Math.min(1, value)) * 100);
+            progress.setAttribute('aria-valuenow', String(percent));
+            fill.style.width = `${percent}%`;
+            status.textContent = `正在加载游戏资源 ${percent}%`;
+          },
+          error() {
+            failed = true;
+            window.clearTimeout(slowTimer);
+            status.textContent = '资源加载失败，请检查网络后重试';
+            retry.hidden = false;
+          },
+          ready() {
+            if (failed) return;
+            window.clearTimeout(slowTimer);
+            fill.style.width = '100%';
+            status.textContent = '加载完成';
+            screen.classList.add('is-ready');
+            window.setTimeout(() => screen.remove(), 220);
+          },
+        };
+      })();
+    </script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
