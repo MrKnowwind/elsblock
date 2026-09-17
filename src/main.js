@@ -18,5 +18,10 @@ new Phaser.Game({
   },
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { activePointers: 4 },
-  render: { antialias: true, roundPixels: false },
+  render: {
+    antialias: true,
+    antialiasGL: false,
+    powerPreference: 'high-performance',
+    roundPixels: false,
+  },
 });

@@ -49,6 +49,7 @@ export class GameScene extends Phaser.Scene {
     this.jumpQueuedAt = -Infinity;
     this.dashUntil = 0;
     this.dashReadyAt = 0;
+    this.dashCoolingDown = null;
     this.coyoteUntil = 0;
     this.jumpsRemaining = CONFIG.maxJumps;
     this.airDash = 1;
@@ -409,6 +410,7 @@ export class GameScene extends Phaser.Scene {
     piece.landingRow = this.board.landingRow(piece.offsets, piece.anchor);
     piece.offsets.forEach((offset, index) => {
       piece.cells[index].body.reset(baseX + offset.x * CELL, baseY - offset.y * CELL);
+      piece.cells[index].marker?.setPosition(piece.cells[index].x, piece.cells[index].y);
       piece.ghost[index].setPosition(baseX + offset.x * CELL, this.rowY(piece.landingRow) - offset.y * CELL);
     });
     piece.beam.x = baseX;
@@ -421,6 +423,7 @@ export class GameScene extends Phaser.Scene {
     piece.offsets.forEach((offset, index) => {
       piece.cells[index].body.reset(baseX + offset.x * CELL, piece.fallY - offset.y * CELL);
       piece.cells[index].body.setVelocityY(piece.fallPixelsPerSecond);
+      piece.cells[index].marker?.setPosition(piece.cells[index].x, piece.cells[index].y);
     });
   }
 
@@ -494,13 +497,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   addTargetMarker(sprite) {
-    const marker = this.add.image(0, 0, 'core').setDisplaySize(CELL * 0.22, CELL * 0.22).setDepth(sprite.depth + 1);
+    const marker = this.add.image(sprite.x, sprite.y, 'core').setDisplaySize(CELL * 0.22, CELL * 0.22).setDepth(sprite.depth + 1);
     sprite.marker = marker;
-    const sync = () => marker.setPosition(sprite.x, sprite.y);
-    sync();
     sprite.on('destroy', () => marker.destroy());
-    this.events.on('postupdate', sync);
-    marker.once('destroy', () => this.events.off('postupdate', sync));
   }
 
   repositionStableViews() {
@@ -552,8 +551,11 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.objectiveText.setText('无尽模式  •  填满整行即可消除');
     }
-    const cooldown = Phaser.Math.Clamp((this.dashReadyAt - this.time.now) / CONFIG.dashCooldownMs, 0, 1);
-    this.dashButton.setTint(cooldown > 0 ? 0x657681 : 0xffffff).setAlpha(cooldown > 0 ? 0.68 : 1);
+    const coolingDown = this.time.now < this.dashReadyAt;
+    if (coolingDown !== this.dashCoolingDown) {
+      this.dashCoolingDown = coolingDown;
+      this.dashButton.setTint(coolingDown ? 0x657681 : 0xffffff).setAlpha(coolingDown ? 0.68 : 1);
+    }
   }
 
   showPause() {
