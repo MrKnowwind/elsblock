@@ -5,7 +5,7 @@ import {
   HEIGHT, REDLINE_ROW, REDLINE_Y, ROWS, WIDTH,
 } from './constants.js';
 import {
-  PieceBag, SHAPES, constrainBallToBoard, fallSpeed, findCrossedSupportTop,
+  PieceBag, SHAPES, advanceFall, constrainBallToBoard, fallSpeed, findCrossedSupportTop,
   lockCountdown, survivalDuration, targetGoal,
 } from './rules.js';
 import { boolValue, maxUnlocked, numberValue, save, unlockNext } from './storage.js';
@@ -383,13 +383,20 @@ export class GameScene extends Phaser.Scene {
     } else if (piece.phase === 'locked') {
       if (now >= piece.lockAt) {
         piece.phase = 'falling';
-        piece.baseY = this.rowY(piece.spawnRow);
-        piece.cells.forEach((cell) => cell.body.setVelocityY(fallSpeed(this.mode, this.level, this.elapsed) * CELL));
+        piece.fallY = this.rowY(piece.spawnRow);
+        piece.fallPixelsPerSecond = fallSpeed(this.mode, this.level, this.elapsed) * CELL;
       }
     } else {
       const targetY = this.rowY(piece.landingRow);
-      const baseY = piece.cells[0].y + piece.offsets[0].y * CELL;
-      if (baseY >= targetY) {
+      const fall = advanceFall({
+        baseY: piece.fallY,
+        targetY,
+        pixelsPerSecond: piece.fallPixelsPerSecond,
+        deltaMs: delta,
+      });
+      piece.fallY = fall.baseY;
+      this.positionFallingPiece(piece);
+      if (fall.landed) {
         piece.cells.forEach((cell) => cell.body.stop());
         this.commitPiece(piece);
       }
@@ -407,6 +414,14 @@ export class GameScene extends Phaser.Scene {
     piece.beam.x = baseX;
     const top = Math.max(...piece.offsets.map((cell) => cell.y));
     piece.countdown.setPosition(baseX, baseY - (top + 0.9) * CELL);
+  }
+
+  positionFallingPiece(piece) {
+    const baseX = this.columnX(piece.anchor);
+    piece.offsets.forEach((offset, index) => {
+      piece.cells[index].body.reset(baseX + offset.x * CELL, piece.fallY - offset.y * CELL);
+      piece.cells[index].body.setVelocityY(piece.fallPixelsPerSecond);
+    });
   }
 
   commitPiece(piece) {

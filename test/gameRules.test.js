@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Board } from '../src/game/Board.js';
-import { PieceBag, constrainBallToBoard, findCrossedSupportTop } from '../src/game/rules.js';
+import { PieceBag, advanceFall, constrainBallToBoard, fallSpeed, findCrossedSupportTop } from '../src/game/rules.js';
 
 test('a committed full layer clears and everything above collapses', () => {
   const board = new Board(10, 15);
@@ -81,4 +81,17 @@ test('a fast falling ball lands on the first block top crossed between frames', 
     boardBottom: 1590,
     cellSize: 82,
   }), null);
+});
+
+test('falling pieces reach their landing row in every mode even when a child body is obstructed', () => {
+  for (const mode of ['survival', 'target', 'endless']) {
+    const result = advanceFall({
+      baseY: 400,
+      targetY: 1400,
+      pixelsPerSecond: fallSpeed(mode, 1, 33) * 82,
+      deltaMs: 3000,
+    });
+
+    assert.deepEqual(result, { baseY: 1400, landed: true }, mode);
+  }
 });

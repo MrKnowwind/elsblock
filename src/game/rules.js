@@ -38,6 +38,11 @@ export const targetGoal = (level) => 12 + (Math.max(1, level) - 1) * 4;
 export const lockCountdown = (elapsed) => Math.max(3, 5 - Math.floor(Math.max(0, elapsed) / 120));
 export const fallSpeed = (mode, level, elapsed) => Math.min(6.9, 5.5 + (mode === 'endless' ? Math.floor(elapsed / 60) : Math.floor((Math.max(1, level) - 1) / 5)) * 0.2);
 
+export function advanceFall({ baseY, targetY, pixelsPerSecond, deltaMs }) {
+  const nextY = Math.min(targetY, baseY + pixelsPerSecond * Math.max(0, deltaMs) / 1000);
+  return { baseY: nextY, landed: nextY >= targetY };
+}
+
 export function constrainBallToBoard(ball, bounds, radius) {
   const minX = bounds.left + radius;
   const maxX = bounds.right - radius;
