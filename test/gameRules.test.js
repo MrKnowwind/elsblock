@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Board } from '../src/game/Board.js';
-import { PieceBag, advanceFall, constrainBallToBoard, fallSpeed, findCrossedSupportTop } from '../src/game/rules.js';
+import {
+  PieceBag, advanceFall, constrainBallToBoard, fallSpeed, findCrossedSupportTop, pieceOccupiesBall,
+} from '../src/game/rules.js';
 
 test('a committed full layer clears and everything above collapses', () => {
   const board = new Board(10, 15);
@@ -94,4 +96,20 @@ test('falling pieces reach their landing row in every mode even when a child bod
 
     assert.deepEqual(result, { baseY: 1400, landed: true }, mode);
   }
+});
+
+test('a piece cannot lock into the ball, while resting contact remains safe', () => {
+  const placement = {
+    cells: [{ x: 2, y: 0 }],
+    boardLeft: 130,
+    boardBottom: 1590,
+    cellSize: 82,
+    ballRadius: 34,
+  };
+  const cellCenterX = 130 + 2.5 * 82;
+  const cellCenterY = 1590 - 0.5 * 82;
+  const blockTop = cellCenterY - 82 * 0.44;
+
+  assert.equal(pieceOccupiesBall({ ...placement, ballX: cellCenterX, ballY: cellCenterY }), true);
+  assert.equal(pieceOccupiesBall({ ...placement, ballX: cellCenterX, ballY: blockTop - 34 }), false);
 });

@@ -43,6 +43,21 @@ export function advanceFall({ baseY, targetY, pixelsPerSecond, deltaMs }) {
   return { baseY: nextY, landed: nextY >= targetY };
 }
 
+export function pieceOccupiesBall({
+  ballX, ballY, ballRadius, cells, boardLeft, boardBottom, cellSize,
+}) {
+  const halfBlock = cellSize * 0.44;
+  return cells.some((cell) => {
+    const centerX = boardLeft + (cell.x + 0.5) * cellSize;
+    const centerY = boardBottom - (cell.y + 0.5) * cellSize;
+    const closestX = Math.max(centerX - halfBlock, Math.min(ballX, centerX + halfBlock));
+    const closestY = Math.max(centerY - halfBlock, Math.min(ballY, centerY + halfBlock));
+    const dx = ballX - closestX;
+    const dy = ballY - closestY;
+    return dx * dx + dy * dy < ballRadius * ballRadius - 0.001;
+  });
+}
+
 export function constrainBallToBoard(ball, bounds, radius) {
   const minX = bounds.left + radius;
   const maxX = bounds.right - radius;

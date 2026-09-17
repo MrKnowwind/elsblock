@@ -6,7 +6,7 @@ import {
 } from './constants.js';
 import {
   PieceBag, SHAPES, advanceFall, constrainBallToBoard, fallSpeed, findCrossedSupportTop,
-  lockCountdown, survivalDuration, targetGoal,
+  lockCountdown, pieceOccupiesBall, survivalDuration, targetGoal,
 } from './rules.js';
 import { boolValue, maxUnlocked, numberValue, save, unlockNext } from './storage.js';
 import { cover, fitWidth, makeButton, panelShell, textStyle } from './ui.js';
@@ -428,6 +428,20 @@ export class GameScene extends Phaser.Scene {
     const absolute = piece.offsets.map((offset) => ({
       x: piece.anchor + offset.x, y: piece.landingRow + offset.y, colorIndex: piece.colorIndex, target: piece.target,
     }));
+    if (pieceOccupiesBall({
+      ballX: this.player.x,
+      ballY: this.player.y,
+      ballRadius: 34,
+      cells: absolute,
+      boardLeft: BOARD_LEFT,
+      boardBottom: BOARD_BOTTOM,
+      cellSize: CELL,
+    })) {
+      this.destroyPiece(piece);
+      this.currentPiece = null;
+      this.finish(false, '被方块挤压');
+      return;
+    }
     const crossed = absolute.some((cell) => cell.y >= REDLINE_ROW);
     const clearingViews = [];
     for (const cell of absolute) {
